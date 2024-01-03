@@ -1,7 +1,10 @@
 {
   "name": "ESPHome Component DEV",
-  "image": "ghcr.io/esphome/esphome-lint:dev",
-  "postCreateCommand": ["scripts/post-create.sh"],
+  "image": "mcr.microsoft.com/devcontainers/python:0-3.11",
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && pip3 install --user -r requirements.txt && pio init --ide vscode",
+  "features": {
+		"ghcr.io/devcontainers-contrib/features/pylint:2": {}
+	},
   "containerEnv": {
     "DEVCONTAINER": "1",
     "PIP_BREAK_SYSTEM_PACKAGES": "1",
@@ -25,6 +28,11 @@
       "settings": {
         "python.languageServer": "Pylance",
         "python.pythonPath": "/usr/bin/python3",
+        "python.analysis.autoSearchPaths": false,
+				// This makes sure the home assistant types are loaded into the editor
+				"python.analysis.extraPaths": [
+					"/home/vscode/.local/lib/python3.11/site-packages/"
+				],
         "python.linting.pylintEnabled": true,
         "python.linting.enabled": true,
         "python.formatting.provider": "black",
