@@ -1,7 +1,7 @@
 {
   "name": "ESPHome Component DEV",
   "image": "ghcr.io/esphome/esphome-lint:dev",
-  "postCreateCommand": [".devcontainer/post-create.sh"],
+  "postCreateCommand": ["scripts/post-create.sh"],
   "containerEnv": {
     "DEVCONTAINER": "1",
     "PIP_BREAK_SYSTEM_PACKAGES": "1",
