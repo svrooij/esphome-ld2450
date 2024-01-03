@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome/components/select/select.h"
+#include <map>
 #include "../ld2450.h"
 
 namespace esphome {

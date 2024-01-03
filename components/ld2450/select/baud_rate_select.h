@@ -2,6 +2,7 @@
 
 #include "esphome/components/select/select.h"
 #include "esphome/core/preferences.h"
+#include <map>
 #include "../ld2450.h"
 
 namespace esphome {
