@@ -38,3 +38,4 @@ venv
 # IDE
 .vscode/
 .idea/
+.pio/

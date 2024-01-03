@@ -1,7 +1,7 @@
 {
   "name": "ESPHome Component DEV",
   "image": "mcr.microsoft.com/devcontainers/python:0-3.11",
-  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && pip3 install --user -r requirements.txt && pio init --ide vscode",
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global user.email \"${localEnv:GIT_EMAIL}\" && git config --global user.name \"${localEnv:GIT_NAME}\" && pip3 install --user -r requirements.txt && pio init",
   "features": {
 		"ghcr.io/devcontainers-contrib/features/pylint:2": {}
 	},
@@ -15,15 +15,12 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        // python
         "ms-python.python",
         "visualstudioexptteam.vscodeintellicode",
-        // yaml
         "redhat.vscode-yaml",
-        // cpp
         "ms-vscode.cpptools",
-        // editorconfig
-        "editorconfig.editorconfig"
+        "editorconfig.editorconfig",
+        "ms-vscode.cpptools-extension-pack"
       ],
       "settings": {
         "python.languageServer": "Pylance",
@@ -33,6 +30,11 @@
 				"python.analysis.extraPaths": [
 					"/home/vscode/.local/lib/python3.11/site-packages/"
 				],
+        "C_Cpp.default.includePath": [
+          "/home/vscode/.platformio/packages/**",
+          "/home/vscode/.local/lib/python3.11/site-packages/**",
+          "/workspaces/esphome-ld2450/.pio/libdeps/esp8266-arduino/**"
+        ],
         "python.linting.pylintEnabled": true,
         "python.linting.enabled": true,
         "python.formatting.provider": "black",
