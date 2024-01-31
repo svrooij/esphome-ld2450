@@ -35,8 +35,8 @@ void LD2450::update() {
 void LD2450::loop() {
     if (!available()) return;
 
-    uint8_t response_buffer[128];
-    int len = read_array(response_buffer, 128);
+    uint8_t response_buffer[20];
+    int len = read_array(response_buffer, 20);
     for (int i = 0; i < len; i++) {
         ESP_LOGI(TAG, "response_buffer[%d] = %02x", i, response_buffer[i]);
     }
