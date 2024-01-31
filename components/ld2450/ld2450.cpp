@@ -8,7 +8,7 @@ static const char *TAG = "ld2450";
 #define PERSON_PUBLISH_(name, person, val) \
     sensor::Sensor *name##_##person; \
     name##_##person = this->name##_##person##_sensor_; \
-    if (name##_##person != nullptr) name##_##person->publish_state(val);
+    if (name##_##person != nullptr && name##_##person->get_state() != val) name##_##person->publish_state(val);
 #define PERSON_PUBLISH(name, person, val) PERSON_PUBLISH_(name, person, val)
 
 #define highbyte(val) (uint8_t)((val) >> 8)
@@ -33,97 +33,300 @@ void LD2450::update() {
 }
 
 void LD2450::loop() {
-    if (!available()) return;
-
-    uint8_t response_buffer[20];
-    int len = read_array(response_buffer, 20);
-    for (int i = 0; i < len; i++) {
-        ESP_LOGI(TAG, "response_buffer[%d] = %02x", i, response_buffer[i]);
+    const int max_line_length = 160;
+    static char buffer[max_line_length];
+    while (available()) {
+      read_line(read(), buffer, max_line_length);
     }
     return;
-    while (available()) {
-        uint8_t c = read();
-        serial_data.buffer[serial_data.size] = c;
-        serial_data.size ++;
+//     while (available()) {
+//         uint8_t c = read();
+//         serial_data.buffer[serial_data.size] = c;
+//         serial_data.size ++;
 
-        switch(c) {
-            case DE_LAST: {
-                // uint8_t de_size = sizeof(DATA_END);
-                // uint8_t packet_size = sizeof(data_packet_struct);
+//         switch(c) {
+//             case DE_LAST: {
+//                 // uint8_t de_size = sizeof(DATA_END);
+//                 // uint8_t packet_size = sizeof(data_packet_struct);
 
-                if(serial_data.size >= packet_size && memcmp(serial_data.buffer+serial_data.size-de_size, DATA_END, de_size) == 0) {
-                    memcpy(&received_data, serial_data.buffer+serial_data.size-packet_size, packet_size);
-                    serial_data.size = 0;
-                }
-                break;
-            }
-            case FH_LAST: {
-                // uint8_t fh_size = sizeof(FRAME_HEADER);
-                if(serial_data.size >= fh_size && memcmp(serial_data.buffer+serial_data.size-fh_size, FRAME_HEADER, fh_size) == 0) {
-                    serial_data.frame_start = serial_data.size - fh_size;
-                }
-                break;
-            }
-            case FE_LAST: {
-                // uint8_t fe_size = sizeof(FRAME_END);
-                // uint8_t min_packet_size = sizeof(FRAME_HEADER) + fe_size + 6;
+//                 if(serial_data.size >= packet_size && memcmp(serial_data.buffer+serial_data.size-de_size, DATA_END, de_size) == 0) {
+//                     memcpy(&received_data, serial_data.buffer+serial_data.size-packet_size, packet_size);
+//                     serial_data.size = 0;
+//                 }
+//                 break;
+//             }
+//             case FH_LAST: {
+//                 // uint8_t fh_size = sizeof(FRAME_HEADER);
+//                 if(serial_data.size >= fh_size && memcmp(serial_data.buffer+serial_data.size-fh_size, FRAME_HEADER, fh_size) == 0) {
+//                     serial_data.frame_start = serial_data.size - fh_size;
+//                 }
+//                 break;
+//             }
+//             case FE_LAST: {
+//                 // uint8_t fe_size = sizeof(FRAME_END);
+//                 // uint8_t min_packet_size = sizeof(FRAME_HEADER) + fe_size + 6;
 
-                if(serial_data.size >= min_packet_size && memcmp(serial_data.buffer+serial_data.size-fe_size, FRAME_END, fe_size) == 0) {
-                    uint8_t frame_size = sizeof(response_frame_header);
-                    memcpy(&response_frame_header, serial_data.buffer+serial_data.frame_start, frame_size);
+//                 if(serial_data.size >= min_packet_size && memcmp(serial_data.buffer+serial_data.size-fe_size, FRAME_END, fe_size) == 0) {
+//                     uint8_t frame_size = sizeof(response_frame_header);
+//                     memcpy(&response_frame_header, serial_data.buffer+serial_data.frame_start, frame_size);
 
-                    if(response_frame_header.command_ack) {
-                        if(response_frame_header.command == GET_REGIONS) {
-                            uint8_t sensor_regions_size = sizeof(sensor_regions);
-                            memcpy(&sensor_regions, serial_data.buffer+serial_data.frame_start+frame_size, sensor_regions_size);
-                        } else {
-                            memcpy(response_buffer, serial_data.buffer+serial_data.frame_start+frame_size, response_frame_header.size_0);
-                        }
+//                     if(response_frame_header.command_ack) {
+//                         if(response_frame_header.command == GET_REGIONS) {
+//                             uint8_t sensor_regions_size = sizeof(sensor_regions);
+//                             memcpy(&sensor_regions, serial_data.buffer+serial_data.frame_start+frame_size, sensor_regions_size);
+//                         } else {
+//                             memcpy(response_buffer, serial_data.buffer+serial_data.frame_start+frame_size, response_frame_header.size_0);
+//                         }
 
-                        switch(response_frame_header.command) {
-                            case GET_MAC:
-                                this->mac_ = str_snprintf("%02x:%02x:%02x:%02x:%02x:%02x", 17, response_buffer[0],
-                                    response_buffer[1], response_buffer[2], response_buffer[3], response_buffer[4],
-                                    response_buffer[5]).c_str();
-                                break;
+//                         switch(response_frame_header.command) {
+//                             case GET_MAC:
+//                                 this->mac_ = str_snprintf("%02x:%02x:%02x:%02x:%02x:%02x", 17, response_buffer[0],
+//                                     response_buffer[1], response_buffer[2], response_buffer[3], response_buffer[4],
+//                                     response_buffer[5]).c_str();
+//                                 break;
 
-                            case READ_FIRMWARE:
-                                this->version_ = str_snprintf("V%u.%02X.%02X%02X%02X%02X", 17, response_buffer[3],
-                                    response_buffer[2], response_buffer[7], response_buffer[6], response_buffer[5],
-                                    response_buffer[4]).c_str();
-                                break;
+//                             case READ_FIRMWARE:
+//                                 this->version_ = str_snprintf("V%u.%02X.%02X%02X%02X%02X", 17, response_buffer[3],
+//                                     response_buffer[2], response_buffer[7], response_buffer[6], response_buffer[5],
+//                                     response_buffer[4]).c_str();
+//                                 break;
 
-#ifdef USE_NUMBER
-                            case GET_REGIONS:
-#ifdef USE_SELECT
-                                std::string value = this->regions_type_select_->at(sensor_regions.type).value();
-                                ESP_LOGD(TAG, "ACK ,  %d", sensor_regions.type);
-                                this->regions_type_select_->publish_state(value);
-#endif // USE_SELECT
-                                for(int i=0; i<3; i++) {
-                                    number::Number *x0 = this->region_numbers_[i][0];
-                                    number::Number *y0 = this->region_numbers_[i][1];
-                                    number::Number *x1 = this->region_numbers_[i][2];
-                                    number::Number *y1 = this->region_numbers_[i][3];
-                                    // TODO: Check if devide can be avoided
-                                    if(x0 != nullptr) x0->publish_state(sensor_regions.coordinates[i].X0/10);
-                                    if(y0 != nullptr) y0->publish_state(sensor_regions.coordinates[i].Y0/10);
-                                    if(x1 != nullptr) x1->publish_state(sensor_regions.coordinates[i].X1/10);
-                                    if(y1 != nullptr) y1->publish_state(sensor_regions.coordinates[i].Y1/10);
-                                }
-                                break;
-#endif // USE_NUMBER
-                        }
-                        serial_data.size = 0;
-                        serial_data.frame_start = 0;
-                    } else {
-                        ESP_LOGD(TAG, "ACK Error, command %02x", response_frame_header.command);
-                    }
-                }
-                break;
-            }
+// #ifdef USE_NUMBER
+//                             case GET_REGIONS:
+// #ifdef USE_SELECT
+//                                 std::string value = this->regions_type_select_->at(sensor_regions.type).value();
+//                                 ESP_LOGD(TAG, "ACK ,  %d", sensor_regions.type);
+//                                 this->regions_type_select_->publish_state(value);
+// #endif // USE_SELECT
+//                                 for(int i=0; i<3; i++) {
+//                                     number::Number *x0 = this->region_numbers_[i][0];
+//                                     number::Number *y0 = this->region_numbers_[i][1];
+//                                     number::Number *x1 = this->region_numbers_[i][2];
+//                                     number::Number *y1 = this->region_numbers_[i][3];
+//                                     // TODO: Check if devide can be avoided
+//                                     if(x0 != nullptr) x0->publish_state(sensor_regions.coordinates[i].X0/10);
+//                                     if(y0 != nullptr) y0->publish_state(sensor_regions.coordinates[i].Y0/10);
+//                                     if(x1 != nullptr) x1->publish_state(sensor_regions.coordinates[i].X1/10);
+//                                     if(y1 != nullptr) y1->publish_state(sensor_regions.coordinates[i].Y1/10);
+//                                 }
+//                                 break;
+// #endif // USE_NUMBER
+//                         }
+//                         serial_data.size = 0;
+//                         serial_data.frame_start = 0;
+//                     } else {
+//                         ESP_LOGD(TAG, "ACK Error, command %02x", response_frame_header.command);
+//                     }
+//                 }
+//                 break;
+//             }
+//         }
+
+//     }
+}
+
+void LD2450::read_line(int readch, char *buffer, int len) {
+    static int pos = 0;
+    if (readch >= 0) {
+      if (pos < len - 1) {
+        buffer[pos++] = readch;
+        buffer[pos] = 0;
+      } else {
+        pos = 0;
+      }
+      if (pos >= 4) {
+        if (buffer[pos - 2] == 0x55 && buffer[pos - 1] == 0xCC) {
+          handle_Periodic_Data_(buffer, pos);
+          pos = 0;  // Reset position index ready for next time
+        } else if (buffer[pos - 4] == 0x04 && buffer[pos - 3] == 0x03 && buffer[pos - 2] == 0x02 && buffer[pos - 1] == 0x01) {
+          handle_ACK_Data_(buffer, pos);
+          pos = 0;  // Reset position index ready for next time
         }
+      }
+    }
+    return;
+  }
 
+void LD2450::handle_Periodic_Data_(char *buffer, int len) {
+    // uint8_t packet_size = sizeof(data_packet_struct);
+    // uint8_t fh_size = sizeof(FRAME_HEADER);
+    // uint8_t fe_size = sizeof(FRAME_END);
+    // uint8_t min_packet_size = fh_size + fe_size + 6;
+
+    // if(len >= min_packet_size && memcmp(buffer, FRAME_HEADER, fh_size) == 0 && memcmp(buffer+len-fe_size, FRAME_END, fe_size) == 0) {
+    //     memcpy(&received_data, buffer+fh_size, packet_size);
+    // }
+    if (len < 29)
+      return;  // 4 frame start bytes + 2 length bytes + 1 data end byte + 1 crc byte + 4 frame end bytes
+    if (buffer[0] != 0xAA || buffer[1] != 0xFF || buffer[2] != 0x03 || buffer[3] != 0x00)
+      return;  // check 4 frame start bytes
+    if (buffer[len - 2] != 0x55 || buffer[len - 1] != 0xCC)
+      return;  //  data end=0x55, 0xcc
+    char stateBytes[STATE_SIZE];
+
+    /*
+      Reduce data update rate to prevent home assistant database size glow fast
+    */
+    uint32_t currentMillis = millis();
+    if (currentMillis - lastPeriodicMillis < 1000)
+      return;
+    lastPeriodicMillis = currentMillis;
+    for (int i = 0; i < TARGETS; i++) {
+      memcpy(stateBytes, &buffer[4 + i * STATE_SIZE], STATE_SIZE);
+      report_target_info(i, stateBytes);
+    }
+    uint8_t newTargets = 0;
+    if (resolution_0_sensor_->get_state() > 0){
+      newTargets+=1;
+    }
+    if (resolution_1_sensor_->get_state() > 0){
+      newTargets+=1;
+    }
+    if (resolution_2_sensor_->get_state() > 0){
+      newTargets+=1;
+    }
+    if (target_count_sensor_->get_state() != newTargets)
+      target_count_sensor_->publish_state(newTargets);
+}
+
+void LD2450::handle_ACK_Data_(char *buffer, int len) {
+    if (len < 10)
+      return;
+    if (buffer[0] != 0xFD || buffer[1] != 0xFC || buffer[2] != 0xFB || buffer[3] != 0xFA)
+      return; // check 4 frame start bytes
+    if (buffer[7] != 0x01)
+      return;
+
+    if (twoByteToUint(buffer[8], buffer[9]) != 0x00) {
+      //lastCommandSuccess->publish_state(false);
+      return;
+    }
+    //lastCommandSuccess->publish_state(true);
+    switch (buffer[6])
+    {
+      case 0x80: // Query Single Tracking response
+      {
+        //trackingMode->publish_state("Single");
+      }
+      break;
+
+      case 0x90: // Query Multiple Trackingresponse
+      {
+        //trackingMode->publish_state("Multiple");
+      }
+      break;
+
+      case 0xA0: // Query FW Version response
+      {
+        char version[18];
+        snprintf(version, sizeof(version), "%01X.%02X.%02X%02X%02X%02X",
+                buffer[13], buffer[12], buffer[17], buffer[16], buffer[15], buffer[14]);
+
+        //fwVersion->publish_state(version);
+      }
+      break;
+
+      case 0xA5: // Query Mac Address response
+      {
+        char mac[18];
+        snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X",
+                buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15]);
+        //macAddress->publish_state(mac);
+      }
+      break;
+
+      case 0xC1: // Query Zone Setting response
+      {
+        int16_t newX, newY;
+        //zoneType->publish_state(buffer[10]);
+
+        // newX = twoByteToInt(buffer[12], buffer[13] & 0x7F);
+        // zone1X1->publish_state(newX / 10);
+        // newY = twoByteToInt(buffer[14], buffer[15] & 0x7F);
+        // zone1Y1->publish_state(newY / 10);
+        // newX = twoByteToInt(buffer[16], buffer[17] & 0x7F);
+        // zone1X2->publish_state(newX / 10);
+        // newY = twoByteToInt(buffer[18], buffer[19] & 0x7F);
+        // zone1Y2->publish_state(newY / 10);
+
+        // newX = twoByteToInt(buffer[20], buffer[21] & 0x7F);
+        // zone2X1->publish_state(newX / 10);
+        // newY = twoByteToInt(buffer[22], buffer[23] & 0x7F);
+        // zone2Y1->publish_state(newY / 10);
+        // newX = twoByteToInt(buffer[24], buffer[25] & 0x7F);
+        // zone2X2->publish_state(newX / 10);
+        // newY = twoByteToInt(buffer[26], buffer[27] & 0x7F);
+        // zone2Y2->publish_state(newY / 10);
+
+        // newX = twoByteToInt(buffer[28], buffer[29] & 0x7F);
+        // zone3X1->publish_state(newX / 10);
+        // newY = twoByteToInt(buffer[30], buffer[31] & 0x7F);
+        // zone3Y1->publish_state(newY / 10);
+        // newX = twoByteToInt(buffer[32], buffer[33] & 0x7F);
+        // zone3X2->publish_state(newX / 10);
+        // newY = twoByteToInt(buffer[34], buffer[35] & 0x7F);
+        // zone3Y2->publish_state(newY / 10);
+      }
+      break;
+
+    default:
+      break;
+    }
+}
+
+void LD2450::report_target_info(int target, char *raw) {
+        int16_t newX, newY, newSpeed;
+    uint16_t newResolution;
+
+    ESP_LOGV(TAG, "Will reporting taget %d", target);
+
+    newX = twoByteToUint(raw[0], raw[1] & 0x7F);
+    if (raw[1] >> 7 != 0x1)
+      newX = 0 - newX / 10;
+    else
+      newX = newX / 10;
+
+    // PERSON_PUBLISH(position_x, target, newX);
+    // if (target1X->get_state() != newX)
+    //   target1X->publish_state(newX);
+    newY = twoByteToUint(raw[2], raw[3] & 0x7F);
+    if (raw[3] >> 7 != 0x1)
+      newY = 0 - newY / 10;
+    else
+      newY = newY / 10;
+    // PERSON_PUBLISH(position_y, target, newY);
+    // if (target1Y->get_state() != newY)
+    //   target1Y->publish_state(newY);
+    newSpeed = twoByteToUint(raw[4], raw[5] & 0x7F);
+    if (raw[5] >> 7 != 0x1)
+      newSpeed = 0 - newSpeed;
+    //PERSON_PUBLISH(speed, 2, transform(received_data.person[2].speed));
+    // PERSON_PUBLISH(speed, target, newSpeed);
+    // if (target1Speed->get_state() != newSpeed)
+    //   target1Speed->publish_state(newSpeed);
+    newResolution = twoByteToUint(raw[6], raw[7]);
+    // PERSON_PUBLISH(resolution, 0, transform(received_data.person[0].resolution));
+    // PERSON_PUBLISH(resolution, target, newResolution);
+
+    switch(target) {
+        case 0:
+            PERSON_PUBLISH(position_x, 0, newX);
+            PERSON_PUBLISH(position_y, 0, newY);
+            PERSON_PUBLISH(speed, 0, newSpeed);
+            PERSON_PUBLISH(resolution, 0, newResolution);
+            break;
+        case 1:
+            PERSON_PUBLISH(position_x, 1, newX);
+            PERSON_PUBLISH(position_y, 1, newY);
+            PERSON_PUBLISH(speed, 1, newSpeed);
+            PERSON_PUBLISH(resolution, 1, newResolution);
+            break;
+        case 2:
+            PERSON_PUBLISH(position_x, 2, newX);
+            PERSON_PUBLISH(position_y, 2, newY);
+            PERSON_PUBLISH(speed, 2, newSpeed);
+            PERSON_PUBLISH(resolution, 2, newResolution);
+            break;
     }
 }
 

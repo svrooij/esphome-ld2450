@@ -39,6 +39,14 @@
 namespace esphome {
 namespace ld2450 {
 
+#define CHECK_BIT(var, pos) (((var) >> (pos)) & 1)
+#define STATE_SIZE 8
+#define TARGETS 3
+
+#define highByte(val) (uint8_t)((val) >> 8)
+#define lowByte(val) (uint8_t)((val) & 0xff)
+
+
 class EntryPoint;
 class PresenceRegion;
 
@@ -141,6 +149,7 @@ class LD2450 : public uart::UARTDevice, public PollingComponent {
     uint8_t FRAME_END[4] = { 0x04, 0x03, 0x02, FE_LAST };
     uint8_t DATA_HEADER[4] = { 0xAA, 0xFF, 0x03, 0x00 };
     uint8_t DATA_END[2] = { 0x55, DE_LAST };
+    uint32_t lastPeriodicMillis = millis();
 
     const uint8_t de_size = sizeof(DATA_END);
     const uint8_t fh_size = sizeof(FRAME_HEADER);
@@ -181,6 +190,16 @@ class LD2450 : public uart::UARTDevice, public PollingComponent {
     void set_multi_target_();
     void reboot_();
     void get_regions_();
+    void handle_Periodic_Data_(char *buffer, int len);
+    void handle_ACK_Data_(char *buffer, int len);
+    void read_line(int readch, char *buffer, int len);
+    void report_target_info(int target, char *raw);
+    uint16_t twoByteToUint(char firstByte, char secondByte) {
+      return (uint16_t)(secondByte << 8) + firstByte;
+    }
+    int16_t twoByteToInt(char firstByte, char secondByte) {
+      return (int16_t)(secondByte << 8) | firstByte;
+    }
 };
 
 
