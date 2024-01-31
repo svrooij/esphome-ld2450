@@ -34,14 +34,14 @@ void LD2450::update() {
 
 void LD2450::loop() {
     while (available()) {
-        char c = read();
+        uint8_t c = read();
         serial_data.buffer[serial_data.size] = c;
         serial_data.size ++;
 
         switch(c) {
             case DE_LAST: {
-                uint8_t de_size = sizeof(DATA_END);
-                uint8_t packet_size = sizeof(data_packet_struct);
+                // uint8_t de_size = sizeof(DATA_END);
+                // uint8_t packet_size = sizeof(data_packet_struct);
 
                 if(serial_data.size >= packet_size && memcmp(serial_data.buffer+serial_data.size-de_size, DATA_END, de_size) == 0) {
                     memcpy(&received_data, serial_data.buffer+serial_data.size-packet_size, packet_size);
@@ -50,15 +50,15 @@ void LD2450::loop() {
                 break;
             }
             case FH_LAST: {
-                uint8_t fh_size = sizeof(FRAME_HEADER);
+                // uint8_t fh_size = sizeof(FRAME_HEADER);
                 if(serial_data.size >= fh_size && memcmp(serial_data.buffer+serial_data.size-fh_size, FRAME_HEADER, fh_size) == 0) {
                     serial_data.frame_start = serial_data.size - fh_size;
                 }
                 break;
             }
             case FE_LAST: {
-                uint8_t fe_size = sizeof(FRAME_END);
-                uint8_t min_packet_size = sizeof(FRAME_HEADER) + fe_size + 6;
+                // uint8_t fe_size = sizeof(FRAME_END);
+                // uint8_t min_packet_size = sizeof(FRAME_HEADER) + fe_size + 6;
 
                 if(serial_data.size >= min_packet_size && memcmp(serial_data.buffer+serial_data.size-fe_size, FRAME_END, fe_size) == 0) {
                     uint8_t frame_size = sizeof(response_frame_header);
@@ -74,14 +74,14 @@ void LD2450::loop() {
 
                         switch(response_frame_header.command) {
                             case GET_MAC:
-                                this->mac_ = str_snprintf("%02x:%02x:%02x:%02x:%02x:%02x", 17, response_buffer[0], 
-                                    response_buffer[1], response_buffer[2], response_buffer[3], response_buffer[4], 
+                                this->mac_ = str_snprintf("%02x:%02x:%02x:%02x:%02x:%02x", 17, response_buffer[0],
+                                    response_buffer[1], response_buffer[2], response_buffer[3], response_buffer[4],
                                     response_buffer[5]).c_str();
                                 break;
 
                             case READ_FIRMWARE:
-                                this->version_ = str_snprintf("V%u.%02X.%02X%02X%02X%02X", 17, response_buffer[3], 
-                                    response_buffer[2], response_buffer[7], response_buffer[6], response_buffer[5], 
+                                this->version_ = str_snprintf("V%u.%02X.%02X%02X%02X%02X", 17, response_buffer[3],
+                                    response_buffer[2], response_buffer[7], response_buffer[6], response_buffer[5],
                                     response_buffer[4]).c_str();
                                 break;
 
@@ -91,20 +91,20 @@ void LD2450::loop() {
                                 std::string value = this->regions_type_select_->at(sensor_regions.type).value();
                                 ESP_LOGD(TAG, "ACK ,  %d", sensor_regions.type);
                                 this->regions_type_select_->publish_state(value);
-#endif
+#endif // USE_SELECT
                                 for(int i=0; i<3; i++) {
                                     number::Number *x0 = this->region_numbers_[i][0];
                                     number::Number *y0 = this->region_numbers_[i][1];
                                     number::Number *x1 = this->region_numbers_[i][2];
                                     number::Number *y1 = this->region_numbers_[i][3];
-
+                                    // TODO: Check if devide can be avoided
                                     if(x0 != nullptr) x0->publish_state(sensor_regions.coordinates[i].X0/10);
                                     if(y0 != nullptr) y0->publish_state(sensor_regions.coordinates[i].Y0/10);
                                     if(x1 != nullptr) x1->publish_state(sensor_regions.coordinates[i].X1/10);
                                     if(y1 != nullptr) y1->publish_state(sensor_regions.coordinates[i].Y1/10);
                                 }
                                 break;
-#endif
+#endif // USE_NUMBER
                         }
                         serial_data.size = 0;
                         serial_data.frame_start = 0;
@@ -171,15 +171,16 @@ void LD2450::set_regions_type(uint8_t state) {
 void LD2450::set_region_number(int region, int coord, number::Number *n) {
     this->region_numbers_[region][coord] = n;
 }
-#endif
+// #endif
 
-#ifdef USE_NUMBER
+// #ifdef USE_NUMBER
 void LD2450::set_region(uint8_t region) {
     number::Number *x0 = this->region_numbers_[region][0];
     number::Number *y0 = this->region_numbers_[region][1];
     number::Number *x1 = this->region_numbers_[region][2];
     number::Number *y1 = this->region_numbers_[region][3];
 
+    // TODO: Check if multiply can be avoided
     if (x0->has_state()) sensor_regions.coordinates[region].X0 = x0->state*10;
     if (y0->has_state()) sensor_regions.coordinates[region].Y0 = y0->state*10;
     if (x1->has_state()) sensor_regions.coordinates[region].X1 = x1->state*10;
@@ -218,7 +219,6 @@ void LD2450::report_position(void) {
     PERSON_PUBLISH(position_y, 2, person[2].y);
     PERSON_PUBLISH(speed, 2, transform(received_data.person[2].speed));
     PERSON_PUBLISH(resolution, 2, transform(received_data.person[2].resolution));
-    
 
     if (this->target_count_sensor_ != nullptr) {
         uint8_t target_count = 0;
@@ -232,8 +232,8 @@ void LD2450::report_position(void) {
 
 #ifdef USE_BINARY_SENSOR
     bool moving_target = (
-        received_data.person[0].speed || 
-        received_data.person[1].speed || 
+        received_data.person[0].speed ||
+        received_data.person[1].speed ||
         received_data.person[2].speed
     );
 
@@ -249,7 +249,7 @@ void LD2450::report_position(void) {
     for (auto *presence_region : presence_regions) {
         presence_region->check_target(person);
     }
-#endif
+#endif // USE_NUMBER
 
     for(int i=0; i<3; i++) {
         bool exiting=false;
@@ -261,7 +261,7 @@ void LD2450::report_position(void) {
                 break;
             }
         }
-#endif
+#endif // USE_NUMBER
 
         if(received_data.person[i].resolution) {
             if(exiting) presence_millis[i] = 0;
@@ -284,11 +284,12 @@ void LD2450::report_position(void) {
     if (this->still_target_binary_sensor_ != nullptr) {
         this->still_target_binary_sensor_->publish_state(still_target);
     }
-#endif
+#endif // USE_BINARY_SENSOR
 }
 
 int16_t LD2450::transform(uint16_t data) {
-    return (data>>15) == 1 ? -1 * (data&0x7FFF) : data&0x7FFF;
+    int16_t result = data & 0x7FFF;
+    return (data >> 15) == 1 ? -result : result;
 }
 
 #ifdef USE_NUMBER
@@ -297,7 +298,7 @@ void LD2450::set_rotate_number() {
         rotate_angle = this->rotate_number_->state;
     }
 }
-#endif
+#endif // USE_NUMBER
 
 void LD2450::add_entry_point(EntryPoint *entry_point) { entry_points.emplace_back(entry_point); }
 
@@ -309,20 +310,19 @@ void LD2450::set_presence_timeout_number() {
         presence_timeout = this->presence_timeout_number_->state;
     }
 }
-#endif
+#endif // USE_NUMBER
 
 coordinates LD2450::rotate_coordinates(double x, double y, double angle) {
     double angle_rad = angle * (M_PI / 180.0);
-    
     double new_x = x * cos(angle_rad) - y * sin(angle_rad);
     double new_y = x * sin(angle_rad) + y * cos(angle_rad);
 #ifdef INVERT_X
     new_x = -new_x;
-#endif
+#endif // INVERT_X
 
 #ifdef INVERT_Y
     new_y = -new_y;
-#endif
+#endif // INVERT_Y
     coordinates result = {new_x, new_y};
     return result;
 }
@@ -354,7 +354,7 @@ void LD2450::read_all_info() {
     this->get_mac_();
 #ifdef USE_SELECT
     this->get_regions_();
-#endif
+#endif // USE_SELECT
     this->set_config_mode_(false);
 }
 

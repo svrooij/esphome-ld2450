@@ -58,7 +58,7 @@ class LD2450 : public uart::UARTDevice, public PollingComponent {
   SUB_SENSOR(position_y_2)
   SUB_SENSOR(speed_2)
   SUB_SENSOR(resolution_2)
-  
+
   SUB_SENSOR(target_count)
 #endif
 
@@ -135,12 +135,20 @@ class LD2450 : public uart::UARTDevice, public PollingComponent {
         DISABLE_REGIONS = 0x00,
         DETECT_REGIONS = 0x01,
         IGNORE_REGIONS = 0x02
-    };   
+    };
 
     uint8_t FRAME_HEADER[4] = { 0xFD, 0xFC, 0xFB, FH_LAST };
     uint8_t FRAME_END[4] = { 0x04, 0x03, 0x02, FE_LAST };
     uint8_t DATA_HEADER[4] = { 0xAA, 0xFF, 0x03, 0x00 };
     uint8_t DATA_END[2] = { 0x55, DE_LAST };
+
+    const uint8_t de_size = sizeof(DATA_END);
+    const uint8_t fh_size = sizeof(FRAME_HEADER);
+    const uint8_t fe_size = sizeof(FRAME_END);
+    const uint8_t packet_size = sizeof(data_packet_struct);
+    const uint8_t min_packet_size = fh_size + fe_size + 6;
+    const uint8_t frame_size = sizeof(response_frame_header);
+    const uint8_t sensor_regions_size = sizeof(sensor_regions);
 
     serial_buffer_struct serial_data;
     frame_start_struct response_frame_header;
