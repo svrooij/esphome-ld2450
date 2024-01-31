@@ -1,7 +1,7 @@
 {
   "name": "ESPHome Component DEV",
   "image": "mcr.microsoft.com/devcontainers/python:0-3.11",
-  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global user.email \"${localEnv:GIT_EMAIL}\" && git config --global user.name \"${localEnv:GIT_NAME}\" && pip3 install --user -r requirements.txt && pio init",
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global user.email \"${localEnv:GIT_EMAIL}\" && git config --global user.name \"${localEnv:GIT_NAME}\" && pip3 install --user -r requirements.txt && pio init && sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
   "features": {
 		"ghcr.io/devcontainers-contrib/features/pylint:2": {}
 	},
