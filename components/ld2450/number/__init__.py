@@ -71,11 +71,11 @@ CONFIG_SCHEMA = cv.Schema({
             cv.Optional(
                 CONF_ENTITY_CATEGORY, default=ENTITY_CATEGORY_CONFIG
             ): cv.entity_category,
-            cv.Optional(CONF_INITIAL_VALUE, default=0): cv.positive_float,
+            cv.Optional(CONF_INITIAL_VALUE, default=30): cv.positive_float,
             cv.Optional(CONF_MAX_VALUE, default=6000): cv.positive_float,
             cv.Optional(CONF_MIN_VALUE, default=0): cv.positive_float,
             cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
-            cv.Optional(CONF_STEP, default=0.1): cv.positive_float,
+            cv.Optional(CONF_STEP, default=1): cv.positive_float,
             cv.Optional(CONF_UNIT_OF_MEASUREMENT, default=UNIT_SECOND): cv.string_strict
         }
     ).extend(cv.COMPONENT_SCHEMA),
@@ -161,7 +161,7 @@ async def to_code(config):
         func = getattr(hub, f"set_rotate_number")
         cg.add(func(var))
         cg.add(var.set_parent(hub))
-    
+
     if presence_timeout_config := config.get(CONF_PRESENCE_TIMEOUT):
         var = await number.new_number(
             presence_timeout_config,

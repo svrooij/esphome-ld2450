@@ -551,7 +551,9 @@ void LD2450::add_presence_region(PresenceRegion *presence_region) { presence_reg
 #ifdef USE_NUMBER
 void LD2450::set_presence_timeout_number() {
     if (this->presence_timeout_number_ != nullptr && this->presence_timeout_number_->has_state()) {
-        presence_timeout = this->presence_timeout_number_->state * 1000;
+
+        this->presence_timeout = this->presence_timeout_number_->state * 1000;
+        ESP_LOGI(TAG, "Set presence timeout,  %dms", this->presence_timeout);
     }
 }
 #endif // USE_NUMBER
