@@ -33,7 +33,7 @@ void LD2450::update() {
 }
 
 void LD2450::loop() {
-    const int max_line_length = 160;
+    const int max_line_length = 100;
     static char buffer[max_line_length];
     while (available()) {
       read_line(read(), buffer, max_line_length);
@@ -47,22 +47,22 @@ void LD2450::loop() {
         this->version_text_sensor_->publish_state(this->version_);
     }
 #endif
-#ifdef USE_BINARY_SENSOR
-#ifdef USE_SENSOR
-    // Will handle the delay in esphome
-    if (this->target_count_sensor_ != nullptr && this->target_binary_sensor_ != nullptr && this->target_count_sensor_->has_state()) {
-      if (this->target_count_sensor_->get_state() > 0) {
-        this->target_binary_sensor_->publish_state(true);
-        //this->last_presence_detected = millis();
-      } else {
-        this->target_binary_sensor_->publish_state(false);
-        // if (millis() - this->last_presence_detected > this->presence_timeout) {
-        //   this->target_binary_sensor_->publish_state(false);
-        // }
-      }
-    }
-#endif // USE_SENSOR
-#endif // USE_BINARY_SENSOR
+// #ifdef USE_BINARY_SENSOR
+// #ifdef USE_SENSOR
+//     // Will handle the delay in esphome
+//     if (this->target_count_sensor_ != nullptr && this->target_binary_sensor_ != nullptr && this->target_count_sensor_->has_state()) {
+//       if (this->target_count_sensor_->get_state() > 0) {
+//         this->target_binary_sensor_->publish_state(true);
+//         //this->last_presence_detected = millis();
+//       } else {
+//         this->target_binary_sensor_->publish_state(false);
+//         // if (millis() - this->last_presence_detected > this->presence_timeout) {
+//         //   this->target_binary_sensor_->publish_state(false);
+//         // }
+//       }
+//     }
+// #endif // USE_SENSOR
+// #endif // USE_BINARY_SENSOR
     return;
 //     while (available()) {
 //         uint8_t c = read();
@@ -211,8 +211,25 @@ void LD2450::handle_Periodic_Data_(char *buffer, int len) {
     if (resolution_2_sensor_->get_state() > 0){
       newTargets+=1;
     }
-    if (target_count_sensor_->get_state() != newTargets)
+    if (target_count_sensor_->get_state() != newTargets) {
       target_count_sensor_->publish_state(newTargets);
+#ifdef USE_BINARY_SENSOR
+
+    // Will handle the delay in esphome
+    if (this->target_binary_sensor_ != nullptr) {
+      if (newTargets > 0) {
+        this->target_binary_sensor_->publish_state(true);
+        //this->last_presence_detected = millis();
+      } else {
+        this->target_binary_sensor_->publish_state(false);
+        // if (millis() - this->last_presence_detected > this->presence_timeout) {
+        //   this->target_binary_sensor_->publish_state(false);
+        // }
+      }
+    }
+#endif // USE_BINARY_SENSOR
+    }
+
 }
 
 void LD2450::handle_ACK_Data_(char *buffer, int len) {
