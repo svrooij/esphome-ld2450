@@ -49,14 +49,16 @@ void LD2450::loop() {
 #endif
 #ifdef USE_BINARY_SENSOR
 #ifdef USE_SENSOR
+    // Will handle the delay in esphome
     if (this->target_count_sensor_ != nullptr && this->target_binary_sensor_ != nullptr && this->target_count_sensor_->has_state()) {
       if (this->target_count_sensor_->get_state() > 0) {
         this->target_binary_sensor_->publish_state(true);
-        this->last_presence_detected = millis();
+        //this->last_presence_detected = millis();
       } else {
-        if (millis() - this->last_presence_detected > this->presence_timeout) {
-          this->target_binary_sensor_->publish_state(false);
-        }
+        this->target_binary_sensor_->publish_state(false);
+        // if (millis() - this->last_presence_detected > this->presence_timeout) {
+        //   this->target_binary_sensor_->publish_state(false);
+        // }
       }
     }
 #endif // USE_SENSOR
