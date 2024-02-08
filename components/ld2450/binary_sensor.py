@@ -8,9 +8,10 @@ from esphome.const import (
     ENTITY_CATEGORY_DIAGNOSTIC,
     ICON_MOTION_SENSOR,
     ICON_ACCOUNT,
+    ICON_CHECK_CIRCLE_OUTLINE,
 )
 from . import LD2450, ld2450_ns, PresenceRegion
-from .const import (CONF_HAS_TARGET, CONF_HAS_MOVING_TARGET,
+from .const import (CONF_COMMAND_SUCCESS, CONF_HAS_TARGET, CONF_HAS_MOVING_TARGET,
     CONF_HAS_STILL_TARGET, CONF_PRESENCE, CONF_REGION_ID,
     CONF_PRESENCE_REGIONS, CONF_LD2450_ID)
 
@@ -29,6 +30,10 @@ CONFIG_SCHEMA = {
     cv.Optional(CONF_HAS_STILL_TARGET): binary_sensor.binary_sensor_schema(
         device_class=DEVICE_CLASS_OCCUPANCY,
         icon=ICON_MOTION_SENSOR,
+    ),
+    cv.Optional(CONF_COMMAND_SUCCESS): binary_sensor.binary_sensor_schema(
+        entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+        icon=ICON_CHECK_CIRCLE_OUTLINE
     ),
     cv.Optional(CONF_PRESENCE_REGIONS): cv.ensure_list(
         binary_sensor.binary_sensor_schema(
@@ -50,6 +55,9 @@ async def to_code(config):
     if has_still_target_config := config.get(CONF_HAS_STILL_TARGET):
         sens = await binary_sensor.new_binary_sensor(has_still_target_config)
         cg.add(hub.set_still_target_binary_sensor(sens))
+    if has_command_success_config := config.get(CONF_COMMAND_SUCCESS):
+        sens = await binary_sensor.new_binary_sensor(has_command_success_config)
+        cg.add(hub.set_command_success_binary_sensor(sens))
     if regions := config.get(CONF_PRESENCE_REGIONS):
         for region in regions:
             n = await cg.get_variable(region[CONF_REGION_ID])

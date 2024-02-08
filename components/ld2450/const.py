@@ -9,6 +9,7 @@ CONF_HAS_MOVING_TARGET = "has_moving_target"
 CONF_HAS_STILL_TARGET = "has_still_target"
 CONF_PRESENCE = "presence"
 CONF_REGION_ID = "region_id"
+CONF_COMMAND_SUCCESS = "command_success"
 
 #sensor
 CONF_TARGET_COUNT = "target_count"

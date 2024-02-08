@@ -79,6 +79,7 @@ class LD2450 : public uart::UARTDevice, public PollingComponent {
   SUB_BINARY_SENSOR(target)
   SUB_BINARY_SENSOR(moving_target)
   SUB_BINARY_SENSOR(still_target)
+  SUB_BINARY_SENSOR(command_success)
 #endif
 
 #ifdef USE_TEXT_SENSOR

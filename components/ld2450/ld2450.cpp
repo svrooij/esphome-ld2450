@@ -38,6 +38,15 @@ void LD2450::loop() {
     while (available()) {
       read_line(read(), buffer, max_line_length);
     }
+#ifdef USE_TEXT_SENSOR
+    if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
+        this->mac_text_sensor_->publish_state(this->mac_);
+    }
+
+    if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
+        this->version_text_sensor_->publish_state(this->version_);
+    }
+#endif
     return;
 //     while (available()) {
 //         uint8_t c = read();
@@ -168,8 +177,8 @@ void LD2450::handle_Periodic_Data_(char *buffer, int len) {
       Reduce data update rate to prevent home assistant database size glow fast
     */
     uint32_t currentMillis = millis();
-    if (currentMillis - lastPeriodicMillis < 1000)
-      return;
+    // if (currentMillis - lastPeriodicMillis < 1000)
+    //   return;
     lastPeriodicMillis = currentMillis;
     for (int i = 0; i < TARGETS; i++) {
       memcpy(stateBytes, &buffer[4 + i * STATE_SIZE], STATE_SIZE);
@@ -198,10 +207,15 @@ void LD2450::handle_ACK_Data_(char *buffer, int len) {
       return;
 
     if (twoByteToUint(buffer[8], buffer[9]) != 0x00) {
+#ifdef USE_BINARY_SENSOR
+      this->command_success_binary_sensor_->publish_state(false);
       //lastCommandSuccess->publish_state(false);
+#endif
       return;
     }
-    //lastCommandSuccess->publish_state(true);
+#ifdef USE_BINARY_SENSOR
+    this->command_success_binary_sensor_->publish_state(false);
+#endif
     switch (buffer[6])
     {
       case 0x80: // Query Single Tracking response
