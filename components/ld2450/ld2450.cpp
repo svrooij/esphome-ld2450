@@ -21,15 +21,15 @@ void LD2450::setup() {
 void LD2450::update() {
     report_position();
 
-#ifdef USE_TEXT_SENSOR
-    if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
-        this->mac_text_sensor_->publish_state(this->mac_);
-    }
+// #ifdef USE_TEXT_SENSOR
+//     if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
+//         this->mac_text_sensor_->publish_state(this->mac_);
+//     }
 
-    if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
-        this->version_text_sensor_->publish_state(this->version_);
-    }
-#endif
+//     if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
+//         this->version_text_sensor_->publish_state(this->version_);
+//     }
+// #endif
 }
 
 void LD2450::loop() {
@@ -38,15 +38,6 @@ void LD2450::loop() {
     while (available()) {
       read_line(read(), buffer, max_line_length);
     }
-#ifdef USE_TEXT_SENSOR
-    if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
-        this->mac_text_sensor_->publish_state(this->mac_);
-    }
-
-    if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
-        this->version_text_sensor_->publish_state(this->version_);
-    }
-#endif
     return;
 //     while (available()) {
 //         uint8_t c = read();
