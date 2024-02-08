@@ -15,21 +15,11 @@ static const char *TAG = "ld2450";
 #define lowbyte(val) (uint8_t)((val) &0xff)
 
 void LD2450::setup() {
-    this->set_timeout(1000, [this]() { this->read_all_info(); });
+    this->set_timeout(900, [this]() { this->read_all_info(); });
 }
 
 void LD2450::update() {
     report_position();
-
-// #ifdef USE_TEXT_SENSOR
-//     if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
-//         this->mac_text_sensor_->publish_state(this->mac_);
-//     }
-
-//     if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
-//         this->version_text_sensor_->publish_state(this->version_);
-//     }
-// #endif
 }
 
 void LD2450::loop() {
@@ -38,31 +28,6 @@ void LD2450::loop() {
     while (available()) {
       read_line(read(), buffer, max_line_length);
     }
-#ifdef USE_TEXT_SENSOR
-    if (this->mac_text_sensor_ != nullptr && (!this->mac_text_sensor_->has_state() || this->mac_text_sensor_->get_state() != this->mac_)) {
-        this->mac_text_sensor_->publish_state(this->mac_);
-    }
-
-    if (this->version_text_sensor_ != nullptr && (!this->version_text_sensor_->has_state() || this->version_text_sensor_->get_state() != this->version_)) {
-        this->version_text_sensor_->publish_state(this->version_);
-    }
-#endif
-// #ifdef USE_BINARY_SENSOR
-// #ifdef USE_SENSOR
-//     // Will handle the delay in esphome
-//     if (this->target_count_sensor_ != nullptr && this->target_binary_sensor_ != nullptr && this->target_count_sensor_->has_state()) {
-//       if (this->target_count_sensor_->get_state() > 0) {
-//         this->target_binary_sensor_->publish_state(true);
-//         //this->last_presence_detected = millis();
-//       } else {
-//         this->target_binary_sensor_->publish_state(false);
-//         // if (millis() - this->last_presence_detected > this->presence_timeout) {
-//         //   this->target_binary_sensor_->publish_state(false);
-//         // }
-//       }
-//     }
-// #endif // USE_SENSOR
-// #endif // USE_BINARY_SENSOR
     return;
 //     while (available()) {
 //         uint8_t c = read();
@@ -215,21 +180,20 @@ void LD2450::handle_Periodic_Data_(char *buffer, int len) {
       target_count_sensor_->publish_state(newTargets);
 #ifdef USE_BINARY_SENSOR
 
-    // Will handle the delay in esphome
-    if (this->target_binary_sensor_ != nullptr) {
-      if (newTargets > 0) {
-        this->target_binary_sensor_->publish_state(true);
-        //this->last_presence_detected = millis();
-      } else {
-        this->target_binary_sensor_->publish_state(false);
-        // if (millis() - this->last_presence_detected > this->presence_timeout) {
-        //   this->target_binary_sensor_->publish_state(false);
-        // }
+      // Will handle the delay in esphome
+      if (this->target_binary_sensor_ != nullptr) {
+        if (newTargets > 0) {
+          this->target_binary_sensor_->publish_state(true);
+          //this->last_presence_detected = millis();
+        } else {
+          this->target_binary_sensor_->publish_state(false);
+          // if (millis() - this->last_presence_detected > this->presence_timeout) {
+          //   this->target_binary_sensor_->publish_state(false);
+          // }
+        }
       }
-    }
 #endif // USE_BINARY_SENSOR
     }
-
 }
 
 void LD2450::handle_ACK_Data_(char *buffer, int len) {
@@ -286,7 +250,7 @@ void LD2450::handle_ACK_Data_(char *buffer, int len) {
 
       case 0xC1: // Query Zone Setting response
       {
-        int16_t newX, newY;
+        //int16_t newX, newY;
         //zoneType->publish_state(buffer[10]);
 
         // newX = twoByteToInt(buffer[12], buffer[13] & 0x7F);
