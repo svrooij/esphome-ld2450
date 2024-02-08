@@ -47,6 +47,18 @@ void LD2450::loop() {
         this->version_text_sensor_->publish_state(this->version_);
     }
 #endif
+#ifdef USE_BINARY_SENSOR && USE_SENSOR
+    if (this->target_count_sensor_ != nullptr && this->target_binary_sensor_ != nullptr && this->target_count_sensor_->has_state()) {
+      if (this->target_count_sensor_->get_state() > 0) {
+        this->target_binary_sensor_->publish_state(true);
+        this->last_presence_detected = millis();
+      } else {
+        if (millis() - this->last_presence_detected > this->presence_timeout) {
+          this->target_binary_sensor_->publish_state(false);
+        }
+      }
+    }
+#endif // USE_BINARY_SENSOR && USE_SENSOR
     return;
 //     while (available()) {
 //         uint8_t c = read();
@@ -458,7 +470,7 @@ void LD2450::report_position(void) {
 
         this->target_count_sensor_->publish_state(target_count);
     }
-#endif
+#endif // USE_SENSOR
 
 #ifdef USE_BINARY_SENSOR
     bool moving_target = (
@@ -537,7 +549,7 @@ void LD2450::add_presence_region(PresenceRegion *presence_region) { presence_reg
 #ifdef USE_NUMBER
 void LD2450::set_presence_timeout_number() {
     if (this->presence_timeout_number_ != nullptr && this->presence_timeout_number_->has_state()) {
-        presence_timeout = this->presence_timeout_number_->state;
+        presence_timeout = this->presence_timeout_number_->state * 1000;
     }
 }
 #endif // USE_NUMBER

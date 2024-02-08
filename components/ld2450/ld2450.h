@@ -170,8 +170,9 @@ class LD2450 : public uart::UARTDevice, public PollingComponent {
     float rotate_angle = 0.0;
     coordinates person[3];
     coordinates person_before[3];
-    float presence_timeout = 0.0;
+    float presence_timeout = 30000.0; // 30 seconds, default presence timeout
     int32_t presence_millis[3];
+    int32_t last_presence_detected = 1;
     std::vector<EntryPoint *> entry_points;
     std::vector<PresenceRegion *> presence_regions;
 
