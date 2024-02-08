@@ -39,11 +39,11 @@ void LD2450::loop() {
       read_line(read(), buffer, max_line_length);
     }
 #ifdef USE_TEXT_SENSOR
-    if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
+    if (this->mac_text_sensor_ != nullptr && (!this->mac_text_sensor_->has_state() || this->mac_text_sensor_->get_state() != this->mac_)) {
         this->mac_text_sensor_->publish_state(this->mac_);
     }
 
-    if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
+    if (this->version_text_sensor_ != nullptr && (!this->version_text_sensor_->has_state() || this->version_text_sensor_->get_state() != this->version_)) {
         this->version_text_sensor_->publish_state(this->version_);
     }
 #endif
@@ -175,6 +175,7 @@ void LD2450::handle_Periodic_Data_(char *buffer, int len) {
 
     /*
       Reduce data update rate to prevent home assistant database size glow fast
+      This can be done through esphome as well,
     */
     uint32_t currentMillis = millis();
     // if (currentMillis - lastPeriodicMillis < 1000)
@@ -214,7 +215,7 @@ void LD2450::handle_ACK_Data_(char *buffer, int len) {
       return;
     }
 #ifdef USE_BINARY_SENSOR
-    this->command_success_binary_sensor_->publish_state(false);
+    this->command_success_binary_sensor_->publish_state(true);
 #endif
     switch (buffer[6])
     {
@@ -400,9 +401,9 @@ void LD2450::set_regions_type(uint8_t state) {
 void LD2450::set_region_number(int region, int coord, number::Number *n) {
     this->region_numbers_[region][coord] = n;
 }
-// #endif
+#endif
 
-// #ifdef USE_NUMBER
+#ifdef USE_NUMBER
 void LD2450::set_region(uint8_t region) {
     number::Number *x0 = this->region_numbers_[region][0];
     number::Number *y0 = this->region_numbers_[region][1];
