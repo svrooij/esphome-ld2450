@@ -23,7 +23,7 @@ void LD2450::update() {
 }
 
 void LD2450::loop() {
-    const int max_line_length = 100;
+    const int max_line_length = 160;
     static char buffer[max_line_length];
     while (available()) {
       read_line(read(), buffer, max_line_length);
