@@ -38,6 +38,15 @@ void LD2450::loop() {
     while (available()) {
       read_line(read(), buffer, max_line_length);
     }
+#ifdef USE_TEXT_SENSOR
+    if (this->mac_text_sensor_ != nullptr && this->mac_text_sensor_->state != this->mac_) {
+        this->mac_text_sensor_->publish_state(this->mac_);
+    }
+
+    if (this->version_text_sensor_ != nullptr && this->version_text_sensor_->state != this->version_) {
+        this->version_text_sensor_->publish_state(this->version_);
+    }
+#endif
     return;
 //     while (available()) {
 //         uint8_t c = read();
@@ -221,8 +230,8 @@ void LD2450::handle_ACK_Data_(char *buffer, int len) {
         char version[18];
         snprintf(version, sizeof(version), "%01X.%02X.%02X%02X%02X%02X",
                 buffer[13], buffer[12], buffer[17], buffer[16], buffer[15], buffer[14]);
-
-        //fwVersion->publish_state(version);
+        // version_text_sensor_->publish_state(version);
+        this->version_ = version;
       }
       break;
 
@@ -231,7 +240,8 @@ void LD2450::handle_ACK_Data_(char *buffer, int len) {
         char mac[18];
         snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X",
                 buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15]);
-        //macAddress->publish_state(mac);
+        // mac_text_sensor_->publish_state(mac);
+        this->mac_ = mac;
       }
       break;
 
@@ -307,6 +317,9 @@ void LD2450::report_target_info(int target, char *raw) {
     newResolution = twoByteToUint(raw[6], raw[7]);
     // PERSON_PUBLISH(resolution, 0, transform(received_data.person[0].resolution));
     // PERSON_PUBLISH(resolution, target, newResolution);
+
+    if (newX == 0 && newY == 0 && newSpeed == 0 && newResolution == 0)
+      return;
 
     switch(target) {
         case 0:
