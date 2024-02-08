@@ -47,7 +47,8 @@ void LD2450::loop() {
         this->version_text_sensor_->publish_state(this->version_);
     }
 #endif
-#ifdef USE_BINARY_SENSOR && USE_SENSOR
+#ifdef USE_BINARY_SENSOR
+#ifdef USE_SENSOR
     if (this->target_count_sensor_ != nullptr && this->target_binary_sensor_ != nullptr && this->target_count_sensor_->has_state()) {
       if (this->target_count_sensor_->get_state() > 0) {
         this->target_binary_sensor_->publish_state(true);
@@ -58,7 +59,8 @@ void LD2450::loop() {
         }
       }
     }
-#endif // USE_BINARY_SENSOR && USE_SENSOR
+#endif // USE_SENSOR
+#endif // USE_BINARY_SENSOR
     return;
 //     while (available()) {
 //         uint8_t c = read();
